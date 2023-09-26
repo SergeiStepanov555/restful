@@ -21,7 +21,7 @@ public class AccountDto {
                 groups = OnCreate.class)
         private String name;
 
-        @NotNull(message = "Amount cannot be nul.l",
+        @NotNull(message = "Amount cannot be null.",
                 groups = {OnDeduct.class, OnDeposit.class})
         @DecimalMin(value = "0.00",
                 inclusive = false,

@@ -8,9 +8,12 @@ import com.example.restful.web.dto.validation.OnCreate;
 import com.example.restful.web.dto.validation.OnDeduct;
 import com.example.restful.web.dto.validation.OnDeposit;
 import com.example.restful.web.mapper.AccountMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
-import org.hibernate.Hibernate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,50 +29,55 @@ import java.util.List;
 
 @RestController
 @Validated
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Tag(name = "Account Controller", description = "Account API")
 @RequestMapping("/api/v1/accounts")
 public class AccountController {
-	
 
 	private final AccountService accountService;
 	private final AccountMapper accountMapper;
-	
-	@PostMapping()
+
+	@Operation(summary = "Creating a new Account")
+	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
 	public AccountDto saveAccount(@Validated(OnCreate.class) @RequestBody AccountDto accountDto) {
 		Account account = accountMapper.toEntity(accountDto);
 		accountService.saveAccount(account);
 		return accountMapper.toDto(account);
 	}
 
+	@Operation(summary = "Get all Accounts")
 	@GetMapping()
 	public List<AccountDto> getAllAccounts(){
 		List<Account> accounts = accountService.getAllAccounts();
 	 	return accountMapper.toDto(accounts);
 	}
 
-	@PatchMapping("/{accountNumber}/deposit")
-	public ResponseEntity<Success> deposit(@PathVariable Long accountNumber, @RequestBody @Validated(OnDeposit.class) AccountDto accountDto) {
+	@Operation(summary = "Deposit to Account")
+	@PatchMapping(value = "/{accountNumber}/deposit", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> deposit(@PathVariable Long accountNumber, @RequestBody @Validated(OnDeposit.class) AccountDto accountDto) {
 		BigDecimal amount = accountDto.getAmount();
 		accountService.deposit(accountNumber, amount);
-		return new ResponseEntity<>(Success.SUCCESS_DEPOSIT, HttpStatus.OK);
+		return new ResponseEntity<>(Success.SUCCESS_DEPOSIT.getValueOfSuccess(), HttpStatus.OK);
 	}
 
-	@PatchMapping(value = "/{fromAccountNumber}/transfer/{toAccountNumber}")
-	public ResponseEntity<Success> transfer(@PathVariable Long fromAccountNumber,
+	@Operation(summary = "Transfer between Accounts")
+	@PatchMapping(value = "/{fromAccountNumber}/transfer/{toAccountNumber}", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> transfer(@PathVariable Long fromAccountNumber,
 										   @PathVariable Long toAccountNumber,
 										   @Validated(OnDeduct.class) @RequestBody AccountDto accountDto) {
 		BigDecimal amount = accountDto.getAmount();
 		String pin = accountDto.getPin();
 		accountService.transfer(fromAccountNumber, toAccountNumber, amount, pin);
-		return new ResponseEntity<>(Success.SUCCESS_TRANSFER, HttpStatus.OK);
+		return new ResponseEntity<>(Success.SUCCESS_TRANSFER.getValueOfSuccess(), HttpStatus.OK);
 	}
 
-	@PatchMapping(value = "/{accountNumber}/withdraw")
-	public ResponseEntity<Success> withdraw(@PathVariable Long accountNumber,
+	@Operation(summary = "Withdraw from Account")
+	@PatchMapping(value = "/{accountNumber}/withdraw", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> withdraw(@PathVariable Long accountNumber,
 										   @Validated @RequestBody AccountDto accountDto) {
 		BigDecimal amount = accountDto.getAmount();
 		String pin = accountDto.getPin();
 		accountService.withdraw(accountNumber, amount, pin);
-		return new ResponseEntity<>(Success.SUCCESS_WITHDRAW, HttpStatus.OK);
+		return new ResponseEntity<>(Success.SUCCESS_WITHDRAW.getValueOfSuccess(), HttpStatus.OK);
 	}
 }

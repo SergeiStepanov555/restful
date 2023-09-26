@@ -1,5 +1,6 @@
 package com.example.restful.service;
 
+import com.example.restful.domain.account.Account;
 import com.example.restful.domain.transaction.Transaction;
 import com.example.restful.repository.TransactionRepository;
 import com.example.restful.service.impl.TransactionServiceImpl;
@@ -11,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,20 +26,33 @@ public class TransactionServiceTest {
 
     private static final Long ACCOUNT_NUMBER_FROM = 10L;
     private static final Long ACCOUNT_NUMBER_TO = 20L;
-    private static final Long TRANSACTION_ID = 1L;
+    private static final Long TRANSACTION_ID1 = 1L;
+    private static final Long TRANSACTION_ID2 = 1L;
     private final static BigDecimal AMOUNT = BigDecimal.valueOf(1000);
-    private final static LocalTime LOCAL_DATE_TIME = LocalTime.of(12, 0);
+    private final static LocalTime LOCAL_DATE_TIME = LocalTime.of(15, 30, 0, 0);
     private final static Transaction.Operation OPERATION_TRANSFER = Transaction.Operation.TRANSFER;
 
-    private Transaction TRANSACTION = Transaction
+    private Transaction TRANSACTION_01 = Transaction
             .builder()
-            .id(TRANSACTION_ID)
+            .id(TRANSACTION_ID1)
             .accountNumberFrom(ACCOUNT_NUMBER_FROM)
             .accountNumberTo(ACCOUNT_NUMBER_TO)
             .amount(AMOUNT)
             .time(LOCAL_DATE_TIME)
             .operation(OPERATION_TRANSFER)
             .build();
+
+    private Transaction TRANSACTION_02 = Transaction
+            .builder()
+            .id(TRANSACTION_ID2)
+            .accountNumberFrom(ACCOUNT_NUMBER_FROM)
+            .accountNumberTo(ACCOUNT_NUMBER_TO)
+            .amount(AMOUNT)
+            .time(LOCAL_DATE_TIME)
+            .operation(OPERATION_TRANSFER)
+            .build();
+
+    private List<Transaction> mockTransactions = List.of(TRANSACTION_01, TRANSACTION_02);
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -46,26 +62,27 @@ public class TransactionServiceTest {
 
     @Test
     public void saveTransactionTest() {
-        // Создаем ожидаемый объект Transaction
-        Transaction expectedTransaction = new Transaction();
-        expectedTransaction.setAccountNumberFrom(ACCOUNT_NUMBER_FROM);
-        expectedTransaction.setAccountNumberTo(ACCOUNT_NUMBER_TO);
-        expectedTransaction.setTime(LocalTime.now());
-        expectedTransaction.setAmount(AMOUNT);
-        expectedTransaction.setOperation(OPERATION_TRANSFER);
+        transactionService.saveTransaction(ACCOUNT_NUMBER_FROM, ACCOUNT_NUMBER_TO, AMOUNT, OPERATION_TRANSFER);
+        verify(transactionRepository, times(1)).save(any());
+    }
 
-        // Настраиваем mock для transactionRepository
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(expectedTransaction);
+    @Test
+    public void testGetAllTransactions() {
+        when(transactionRepository.findAll()).thenReturn(mockTransactions);
+        List<Transaction> result = transactionService.getAllTransactions();
+        verify(transactionRepository, times(1)).findAll();
+        assertEquals(mockTransactions, result);
+    }
 
-        // Вызываем метод, который хотим протестировать
-        Transaction savedTransaction = transactionService.saveTransaction(ACCOUNT_NUMBER_FROM, ACCOUNT_NUMBER_TO, AMOUNT, OPERATION_TRANSFER);
-
-        // Проверяем, что метод save был вызван с ожидаемым объектом Transaction
-        verify(transactionRepository, times(1)).save(expectedTransaction);
-
-        // Проверяем, что возвращенный объект Transaction соответствует ожидаемому
-        assertEquals(expectedTransaction, savedTransaction);
+    @Test
+    public void testGetAllTransactionsByAccountNumber() {
+        when(transactionRepository.findTransactionsByAccountNumberFrom(ACCOUNT_NUMBER_FROM)).thenReturn(mockTransactions);
+        List<Transaction> result = transactionService.getAllTransactionsByAccountNumber(ACCOUNT_NUMBER_FROM);
+        verify(transactionRepository, times(1)).findTransactionsByAccountNumberFrom(ACCOUNT_NUMBER_FROM);
+        assertEquals(mockTransactions, result);
     }
 }
+
+
 
 

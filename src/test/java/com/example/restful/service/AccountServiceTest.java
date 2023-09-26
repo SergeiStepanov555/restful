@@ -2,6 +2,7 @@ package com.example.restful.service;
 
 import com.example.restful.domain.account.Account;
 import com.example.restful.domain.exception.ResourceNotFoundException;
+import com.example.restful.domain.exception.WrongAmountException;
 import com.example.restful.domain.exception.WrongPinException;
 import com.example.restful.domain.exception.ZeroBalanceException;
 import com.example.restful.domain.transaction.Transaction;
@@ -42,7 +43,8 @@ public class AccountServiceTest {
     private static final BigDecimal AMOUNT = BigDecimal.ZERO;
     private static final BigDecimal AMOUNT_TO_DEPOSIT = BigDecimal.valueOf(1000.00);
     private static final BigDecimal AMOUNT_TO_TRANSFER = BigDecimal.valueOf(1000.00);
-    private static final BigDecimal AMOUNT_TO_WITHDRAW = BigDecimal.valueOf(1000.00);
+    private static final BigDecimal AMOUNT_TO_SUCCESS_WITHDRAW = BigDecimal.valueOf(1000.00);
+    private static final BigDecimal AMOUNT_TO_FAIL_WITHDRAW = BigDecimal.valueOf(500.00);
     private static final Long WRONG_ACCOUNT_NUMBER = 1L;
     private static final String WRONG_PIN = "1010";
 
@@ -103,7 +105,7 @@ public class AccountServiceTest {
     }
 
     @Test
-    void depositThrowsExceptionWhenAccountNotFound() {
+    void depositThrowsResourceNotFoundExceptionWhenAccountNotFound() {
         when(accountRepository.findById(WRONG_ACCOUNT_NUMBER)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> {
             accountService.deposit(WRONG_ACCOUNT_NUMBER, AMOUNT_TO_DEPOSIT);
@@ -126,15 +128,26 @@ public class AccountServiceTest {
     }
 
     @Test
-    void transferThrowsResourceNotFoundExceptionWhenFromAccountNotFound() {
-        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+    void transferThrowsResourceNotFoundExceptionWhenFromAccountNotFoundForFirstNumber() {
         doReturn(Optional.empty()).when(accountRepository).findById(WRONG_ACCOUNT_NUMBER);
         assertThrows(ResourceNotFoundException.class, () -> {
-            accountService.transfer(ACCOUNT_NUMBER_ADAM, WRONG_ACCOUNT_NUMBER, AMOUNT, PIN_ADAM);
+            accountService.transfer(WRONG_ACCOUNT_NUMBER, ACCOUNT_NUMBER_EVE, AMOUNT_TO_TRANSFER, PIN_ADAM);
         });
         verify(accountRepository, never()).save(any());
         verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
     }
+
+    @Test
+    void transferThrowsResourceNotFoundExceptionWhenFromAccountNotFoundForSecondNumber() {
+        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+        doReturn(Optional.empty()).when(accountRepository).findById(WRONG_ACCOUNT_NUMBER);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            accountService.transfer(ACCOUNT_NUMBER_ADAM, WRONG_ACCOUNT_NUMBER, AMOUNT_TO_TRANSFER, PIN_ADAM);
+        });
+        verify(accountRepository, never()).save(any());
+        verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
+    }
+
 
     @Test
     void transferThrowsWrongPinExceptionExceptionWhenFromAccountNotFound() {
@@ -142,7 +155,19 @@ public class AccountServiceTest {
         lenient().doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
         lenient().doReturn(Optional.of(EVE)).when(accountRepository).findById(ACCOUNT_NUMBER_EVE);
         assertThrows(WrongPinException.class, () -> {
-            accountService.transfer(ACCOUNT_NUMBER_ADAM, WRONG_ACCOUNT_NUMBER, AMOUNT, WRONG_PIN);
+            accountService.transfer(ACCOUNT_NUMBER_ADAM, WRONG_ACCOUNT_NUMBER, AMOUNT_TO_TRANSFER, WRONG_PIN);
+        });
+        verify(accountRepository, never()).save(any());
+        verify(accountRepository, never()).save(any());
+        verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
+    }
+
+    @Test
+    void transferThrowsWrongAmountExceptionWhenAmountIsWrong() {
+        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+        doReturn(Optional.of(EVE)).when(accountRepository).findById(ACCOUNT_NUMBER_EVE);
+        assertThrows(WrongAmountException.class, () -> {
+            accountService.transfer(ACCOUNT_NUMBER_ADAM, ACCOUNT_NUMBER_EVE, AMOUNT_TO_TRANSFER, PIN_ADAM);
         });
         verify(accountRepository, never()).save(any());
         verify(accountRepository, never()).save(any());
@@ -151,9 +176,9 @@ public class AccountServiceTest {
 
     @Test
     void withdrawSuccessful() {
-        ADAM.setAmount(AMOUNT_TO_DEPOSIT);
+        ADAM.setAmount(AMOUNT_TO_SUCCESS_WITHDRAW);
         lenient().doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
-        accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT_TO_WITHDRAW, PIN_ADAM);
+        accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT_TO_SUCCESS_WITHDRAW, PIN_ADAM);
         assertEquals(new BigDecimal("0.0"), ADAM.getAmount());
         verify(accountRepository, times(1)).save(ADAM);
         verify(transactionService, times(1)).saveTransaction(ACCOUNT_NUMBER_ADAM, ACCOUNT_NUMBER_ADAM, AMOUNT_TO_DEPOSIT, Transaction.Operation.WITHDRAW);
@@ -161,12 +186,43 @@ public class AccountServiceTest {
 
     @Test
     void withdrawThrowsZeroBalanceExceptionWhenBalanceIsZero() {
-        lenient().doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
         assertThrows(ZeroBalanceException.class, () -> {
-            accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT_TO_WITHDRAW, PIN_ADAM);
+            accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT_TO_SUCCESS_WITHDRAW, PIN_ADAM);
             verify(accountRepository, never()).save(any());
             verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
         });
+    }
+
+    @Test
+    void withdrawThrowsResourceNotFoundExceptionWhenAccountNumberIsWrong() {
+        when(accountRepository.findById(WRONG_ACCOUNT_NUMBER)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            accountService.withdraw(WRONG_ACCOUNT_NUMBER, AMOUNT, PIN_ADAM);
+        });
+        verify(accountRepository, never()).save(any());
+        verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
+    }
+
+    @Test
+    void withdrawThrowsWrongPinExceptionWhenPinIsWrong() {
+        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+        assertThrows(WrongPinException.class, () -> {
+            accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT, WRONG_PIN);
+        });
+        verify(accountRepository, never()).save(any());
+        verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
+    }
+
+    @Test
+    void withdrawThrowsWrongAmountExceptionWhenAmountIsWrong() {
+        ADAM.setAmount(AMOUNT_TO_FAIL_WITHDRAW);
+        doReturn(Optional.of(ADAM)).when(accountRepository).findById(ACCOUNT_NUMBER_ADAM);
+        assertThrows(WrongAmountException.class, () -> {
+            accountService.withdraw(ACCOUNT_NUMBER_ADAM, AMOUNT_TO_SUCCESS_WITHDRAW, PIN_ADAM);
+        });
+        verify(accountRepository, never()).save(any());
+        verify(transactionService, never()).saveTransaction(any(), any(), any(), any());
     }
 }
 

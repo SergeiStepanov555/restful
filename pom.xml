@@ -13,15 +13,35 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>spring-embedded-h2-db</name>
 	<description>Restful service</description>
+
 	<properties>
 		<java.version>11</java.version>
+		<lombok.version>1.18.24</lombok.version>
 		<mapsruct.version>1.5.3.Final</mapsruct.version>
+		<validation-api.version>2.0.1.Final</validation-api.version>
+		<swagger-annotations.version>2.2.8</swagger-annotations.version>
+		<io.springfox.version>3.0.0</io.springfox.version>
 	</properties>
+
 	<dependencies>
+
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>${swagger-annotations.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-boot-starter</artifactId>
+			<version>${io.springfox.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -32,16 +52,11 @@
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.validation</groupId>
-			<artifactId>validation-api</artifactId>
-			<version>2.0.1.Final</version>
 		</dependency>
 
 		<dependency>
@@ -50,8 +65,15 @@
 		</dependency>
 
 		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>${validation-api.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
 		</dependency>
 
 		<dependency>
@@ -59,14 +81,14 @@
 			<artifactId>mapstruct</artifactId>
 			<version>${mapsruct.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct-processor</artifactId>
 			<version>${mapsruct.version}</version>
 		</dependency>
+
 	</dependencies>
-
-
 
 	<build>
 		<plugins>

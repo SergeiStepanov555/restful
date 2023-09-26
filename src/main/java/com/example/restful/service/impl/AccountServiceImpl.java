@@ -1,38 +1,32 @@
 package com.example.restful.service.impl;
 
+import com.example.restful.domain.account.Account;
+import com.example.restful.domain.exception.ResourceNotFoundException;
+import com.example.restful.domain.exception.WrongAmountException;
+import com.example.restful.domain.exception.WrongPinException;
+import com.example.restful.domain.exception.ZeroBalanceException;
+import com.example.restful.domain.transaction.Transaction;
+import com.example.restful.repository.AccountRepository;
+import com.example.restful.service.AccountService;
+import com.example.restful.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 
-import com.example.restful.domain.exception.ResourceNotFoundException;
-import com.example.restful.domain.exception.WrongAmountException;
-import com.example.restful.domain.exception.WrongPinException;
-import com.example.restful.domain.exception.ZeroBalanceException;
-import com.example.restful.domain.transaction.Transaction;
-import com.example.restful.service.AccountService;
-import com.example.restful.service.TransactionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.example.restful.domain.account.Account;
-import com.example.restful.repository.AccountRepository;
-import org.springframework.transaction.annotation.Transactional;
-
-
 @Service
+@RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
 	private final AccountRepository accountRepository;
-
 	private final TransactionService transactionService;
 
-	public AccountServiceImpl(AccountRepository accountRepository, TransactionService transactionService) {
-		this.accountRepository = accountRepository;
-		this.transactionService = transactionService;
-	}
-
+	@Override
 	@Transactional
 	public Account saveAccount(Account account) {
 		account.setAccountNumber(Math.abs(new Random().nextLong()));
@@ -41,14 +35,16 @@ public class AccountServiceImpl implements AccountService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<Account> getAllAccounts() {
 		List<Account> accounts = new ArrayList<>();
 		accountRepository.findAll().forEach(accounts::add);
 		return accounts;
 	}
 
-	@Transactional
+
 	@Override
+	@Transactional
 	public void deposit(Long accountNumber, BigDecimal amount) {
 		Account account = accountRepository.findById(accountNumber)
 				.orElseThrow(() ->
@@ -58,8 +54,9 @@ public class AccountServiceImpl implements AccountService {
 		transactionService.saveTransaction(null, accountNumber, amount, Transaction.Operation.DEPOSIT);
 	}
 
-	@Transactional
+
 	@Override
+	@Transactional
 	public void transfer(Long fromAccountNumber, Long toAccountNumber, BigDecimal amount, String pin) {
 		Account fromAccount = accountRepository.findById(fromAccountNumber)
 				.orElseThrow(() ->
@@ -81,6 +78,8 @@ public class AccountServiceImpl implements AccountService {
 		transactionService.saveTransaction(fromAccountNumber, toAccountNumber, amount, Transaction.Operation.TRANSFER);
 	}
 
+
+	@Override
 	@Transactional
 	public void withdraw(Long accountNumber, BigDecimal amount, String pin) {
 		Account account = accountRepository.findById(accountNumber)

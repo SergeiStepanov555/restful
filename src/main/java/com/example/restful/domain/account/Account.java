@@ -1,6 +1,7 @@
 package com.example.restful.domain.account;
 
 import lombok.Builder;
+import lombok.Data;
 import org.springframework.lang.NonNull;
 
 import javax.persistence.Column;
@@ -10,6 +11,7 @@ import javax.persistence.Table;
 import java.math.BigDecimal;
 
 @Builder
+@Data
 @Entity
 @Table
 public class Account {
@@ -40,37 +42,5 @@ public class Account {
     }
 
     public Account() {
-    }
-
-    public Long getAccountNumber() {
-        return accountNumber;
-    }
-
-    public void setAccountNumber(Long accountNumber) {
-        this.accountNumber = accountNumber;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getPin() {
-        return pin;
-    }
-
-    public void setPin(String pin) {
-        this.pin = pin;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
     }
 }

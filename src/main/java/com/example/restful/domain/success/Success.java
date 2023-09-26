@@ -11,4 +11,8 @@ public enum Success {
     Success(String valueOfSuccess) {
         this.valueOfSuccess = valueOfSuccess;
     }
+
+    public String getValueOfSuccess() {
+        return valueOfSuccess;
+    }
 }
